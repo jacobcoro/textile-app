@@ -22,31 +22,15 @@
 
 <script>
 import vueFlashcard from 'vue-flashcard';
-import API from '@textile/textile';
-import { Client } from '@textile/threads-client';
+import { Database } from '@textile/threads-database';
 const uuidv4 = require('uuid/v4');
-
-const cardSchema = {
-  $schema: 'http://json-schema.org/draft-07/schema#', // Always use this.
-  $id: 'https://example.com/card.schema.json', // https://json-schema.org/learn/getting-started-step-by-step.html
-  title: 'Card',
-  type: 'object',
-  properties: {
-    id: {
-      type: 'string',
-      description: 'The cards id.',
-    },
-    front_text: {
-      type: 'string',
-      description: 'The text on the front.',
-    },
-    back_text: {
-      type: 'string',
-      description: 'The text on the back.',
-    },
-  },
+const initOptions = {
+  dispatcher: null,
+  eventBus: null,
+  network: null,
+  identity: null,
+  token: null,
 };
-
 export default {
   name: 'Home',
   components: { vueFlashcard },
@@ -64,24 +48,34 @@ export default {
   },
   methods: {
     startup: async function() {
-      // generating random device/userID for testing.
-      const deviceId = uuidv4();
-      // Hard-coded for demo purposes
-      const userToken = '54e24fc3-fda5-478a-b1f7-040ea5aaab33';
-      // initialize Textile Hub API:
-      const hubApi = new API({
-        token: userToken,
-        deviceId,
+      // tried this with ..., nothing, and initOptions, all gave errors
+      const db = new Database(initOptions);
+      const Collection = await db.newCollectionFromObject('Players', {
+        ID: '',
+        team: '',
+        name: '',
+        points: 0,
       });
-      await hubApi.start();
-      // initialize Textile Client:
-      this.client = new Client(hubApi.threadsConfig);
-      // initialize store(db):
-      this.store = await this.client.newStore();
-      // register schema/model in the store:
-      await this.client.registerSchema(this.store.id, 'Card', cardSchema);
-      // start store:
-      await this.client.start(this.store.id);
+
+      // This will listen to any and all event types on Players
+      db.on('Players.**', update => {
+        console.log(update);
+      });
+      const Players = new Collection('players', {}); // Anything goes schema
+      await Players.insert(
+        { ID: '', points: 11, team: 'Astronauts', name: 'beth' },
+        { ID: '', points: 1, team: 'Astronauts', name: 'jim' },
+        { ID: '', points: 18, team: 'Astronauts', name: 'issac' },
+        { ID: '', points: 7, team: 'Astronauts', name: 'beth' }
+      );
+
+      const all = Players.find(
+        { $or: [{ points: { $gt: 10 } }, { name: 'jim' }] },
+        { sort: { points: -1 } }
+      );
+      for await (const { key, value } of all) {
+        console.log(key, value);
+      }
     },
     loadCards: async function() {
       const found = await this.client.modelFind(this.store.id, 'Card', {});
