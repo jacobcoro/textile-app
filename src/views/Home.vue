@@ -83,7 +83,7 @@ export default {
       // start store:
       await this.client.start(this.store.id);
     },
-    async loadCards() {
+    loadCards: async function() {
       const found = await this.client.modelFind(this.store.id, 'Card', {});
       this.cards = found.entitiesList;
       // .map(entity => entity)
@@ -91,7 +91,7 @@ export default {
       //   return new TodoItem(obj);
       // });
     },
-    async addCard() {
+    addCard: async function() {
       const card = { id: uuidv4(), front_text: this.frontText, back_text: this.backText };
       const created = await this.client.modelCreate(this.store.id, 'Card', [card]);
       this.cards = created.entitiesList;
