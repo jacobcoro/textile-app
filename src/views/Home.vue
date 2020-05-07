@@ -67,7 +67,7 @@ export default {
       // generating random device/userID for testing.
       const deviceId = uuidv4();
       // Hard-coded for demo purposes
-      const userToken = 'fda5';
+      const userToken = '54e24fc3-fda5-478a-b1f7-040ea5aaab33';
       // initialize Textile Hub API:
       const hubApi = new API({
         token: userToken,
