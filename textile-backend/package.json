@@ -1,15 +1,103 @@
 {
   "name": "texttile-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "a backend for an app built with Textile Hub",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf dist",
+    "dev": "run-p watch dev:serve",
+    "dev:serve": "node-dev --respawn dist/app.js",
+    "serve": "node dist/",
+    "watch:server": "tsc -p src/ -w",
+    "watch": "run-p watch:*",
+    "build:server": "tsc -p src/",
+    "build": "run-s clean build:server",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "koa": "^2.12.0"
+    "@textile/context": "^0.4.1",
+    "@textile/textile": "^0.3.1",
+    "@textile/threads-client": "^0.5.1",
+    "@textile/threads-core": "^0.1.13",
+    "@types/node": "^14.0.9",
+    "dotenv": "^8.2.0",
+    "lodash": "^4.17.15",
+    "emittery": "^0.7.0",
+    "isomorphic-ws": "^4.0.1",
+    "jdenticon": "^2.2.0",
+    "koa": "^2.12.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-json": "^2.0.2",
+    "koa-logger": "^3.2.1",
+    "koa-route": "^3.2.0",
+    "koa-router": "^8.0.8",
+    "koa-send": "^5.0.0",
+    "koa-static": "^5.0.0",
+    "koa-websocket": "^6.0.0",
+    "ws": "^7.3.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.10.2",
+    "@types/jest": "^25.2.3",
+    "@types/koa": "^2.11.3",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-json": "^2.0.18",
+    "@types/koa-logger": "^3.1.1",
+    "@types/koa-router": "^7.4.1",
+    "@types/lodash": "^4.14.153",
+    "@typescript-eslint/eslint-plugin": "^3.1.0",
+    "@typescript-eslint/parser": "^3.1.0",
+    "babel-jest": "^26.0.1",
+    "eslint": "^7.1.0",
+    "jest": "^26.0.1",
+    "node-dev": "^4.0.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.12.1",
+    "supertest": "^4.0.2",
+    "ts-jest": "^26.1.0",
+    "ts-loader": "^7.0.5",
+    "ts-node-dev": "^1.0.0-pre.44",
+    "typescript": "^3.9.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "ts",
+      "tsx"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "**/*.{ts,js}",
+      "!**/node_modules/**",
+      "!**/build/**",
+      "!**/coverage/**"
+    ],
+    "transform": {
+      "^.+\\.ts?$": "ts-jest"
+    },
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    },
+    "coverageReporters": [
+      "text",
+      "text-summary"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(js|ts)x?$",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/build/",
+      "/coverage/"
+    ]
   }
 }
