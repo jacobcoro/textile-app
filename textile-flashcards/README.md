@@ -1,21 +1,17 @@
-# sandbox-flashcard-app-vue
+# textile-flashcards
 
-## A sandbox for testing new libraries and techniques
+### Created with simple sandbox flashcard app
 
-This sandbox app is a great place to test out whatever you'd like to learn.
+fork of [this project, made for quickly testing CRUD ops and features in Vue](https://github.com/Jewcub/sandbox-flashcard-app-vue)
 
-I used it to learn about unit, snapshot and e2e testing, typescript, and BEM style CSS techniques.
+### Built from textile docs examples
 
-It was started with Vue CLI.
+[examples repo](https://github.com/textileio/js-examples)
 
-### Typescript
+View in project using which part of the Textile examples:
 
-It uses typescript, although the usage is rather simple and should be easy for TS beginners to understand.
-
-If you don’t want to use Typescript, you can remove `lang=“ts”` from `<script>` ,
-remove the line `import { Deck, Card, NewCardPayload, DeleteCardPayload, EditCardPayload } from ‘@/types’;`
-remove the typings: `as Deck[]`, `as string` and `NewCardPayload` etc.
-and remove `Vue.extends(` from the beginning of components, along with the trailing )
+- LocalThreadsDB: from [react-native-threads-app](https://github.com/textileio/js-examples/tree/master/react-native-threads-app)
+- RemoteThreadsDB: from [react-native-hub-app](https://github.com/textileio/js-examples/tree/master/react-native-hub-app)
 
 ### BEM
 
@@ -50,6 +46,10 @@ As an example of how to do that, I created another view VuexPersisted, to test o
 - Add it to the 'routeNames' list in tests/e2e/specs/e2etest.js and your new view will be included in e2e tests
 
 ## Project setup
+
+remove "example" from before the name of the example.env.local file, and change to your user_group keys from textile hub
+
+open the textile-flashcards folder in terminal
 
 ```shell
 npm install

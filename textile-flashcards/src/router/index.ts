@@ -23,6 +23,11 @@ const routes: Array<RouteConfig> = [
     name: 'LocalThreadsDB',
     component: LocalThreadsDB,
   },
+  {
+    path: '/RemoteThreadsDB',
+    name: 'RemoteThreadsDB',
+    component: RemoteThreadsDB,
+  },
 ];
 
 const router = new VueRouter({

@@ -1,7 +1,10 @@
 <template>
   <div class="home">
     <section class="home__section editing-section">
-      <deck-input class="editing-section__deck-input" @createDeck="createDeck"></deck-input>
+      <deck-input
+        class="editing-section__deck-input"
+        @createDeck="createDeck"
+      ></deck-input>
       <card-input
         class="editing-section__card-input"
         :selected-deck="selectedDeck"
@@ -31,9 +34,17 @@
 </template>
 
 <script lang="ts">
+// Followiing textile js-examples: react-native-threads-app
+
 import Vue from 'vue';
 
-import { Deck, Card, NewCardPayload, DeleteCardPayload, EditCardPayload } from '@/types';
+import {
+  Deck,
+  Card,
+  NewCardPayload,
+  DeleteCardPayload,
+  EditCardPayload,
+} from '../types';
 
 import CardEditor from '@/components/CardEditor.vue';
 import DeckInput from '@/components/DeckInput.vue';
@@ -43,7 +54,10 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
 // Textile
-import { Libp2pCryptoIdentity } from '@textile/threads-core';
+import { schema } from '../schemas.js';
+// import { Libp2pCryptoIdentity } from '@textile/threads-core';
+import { Client, Where } from '@textile/threads-client';
+import { ThreadID } from '@textile/threads-id';
 
 export default Vue.extend({
   name: 'LocalThreadsDB',
@@ -54,33 +68,46 @@ export default Vue.extend({
       selectedDeck: '' as string,
       showEditor: false as boolean,
       editPayload: {} as EditCardPayload,
+      threadId: '' as string,
+      client: null as Client,
     };
   },
+  mounted() {
+    this.initialize();
+  },
   methods: {
-    createUserID: async function() {
-      // Textile
-      /** Random new identity */
-      const identity = await Libp2pCryptoIdentity.fromRandom();
-      /** Convert to string. */
-      const identityString = identity.toString();
-      this.saveIDtoLocal(identityString);
-      return identity;
+    createDBWithRandomThread: async function() {
+      // Create a new ThreadID to use as our dbID
+      const threadId = ThreadID.fromRandom();
+      console.log(threadId);
+      // Fire up a new Client
+      const client = new Client();
+      console.log(client);
+      // Create a new DB with the ID we already generated
+      await client.newDB(threadId); // fails here with error Error: Session or API key required
+      console.log(client);
     },
-    saveIDtoLocal: function(ID: string) {
-      localStorage.setItem('user-private-identity', ID);
+    createDecksCollection: async function() {
+      // Create a new collection with the Deck schema
+      await this.client.newCollection(this.threadId, 'Deck', schema.deck);
+      // Create a new instance of a Deck
+      const decks = await this.client.create(
+        this.threadId,
+        'Deck',
+        this.decks[0]
+      );
+      console.log(decks);
     },
-    getIdentity: async function(): Promise<Libp2pCryptoIdentity> {
-      /** Restore any cached user identity first */
-      const cached = localStorage.getItem('user-private-identity');
-      if (cached !== null) {
-        /** Convert the cached identity string to a Libp2pCryptoIdentity and return */
-        return Libp2pCryptoIdentity.fromString(cached);
-      }
-      /** No cached identity existed, so create a new one */
-      return await this.createUserID();
+    queryDecksCollection: async function() {
+      // Search for an Instance with _id of 123 (the default deck's ID)
+      const query = new Where('_id').eq('123');
+      const response = await this.client.find(this.threadId, 'Deck', query);
+      console.log(response);
     },
-    initialize: function() {
-      return null;
+    initialize: async function() {
+      await this.createDBWithRandomThread();
+      await this.createDecksCollection();
+      await this.queryDecksCollection();
     },
     createDeck: function(deck: Deck) {
       this.decks.push(deck);

@@ -7,6 +7,12 @@
       <router-link class="nav__link" to="/VuexPersisted"
         >1: Vuex Persisted</router-link
       >
+      <router-link class="nav__link" to="/LocalThreadsDB"
+        >2: LocalThreadsDB</router-link
+      >
+      <router-link class="nav__link" to="/RemoteThreadsDB"
+        >3: RemoteThreadsDB</router-link
+      >
     </div>
     <router-view class="app_router-view" />
   </div>

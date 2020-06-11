@@ -14,7 +14,7 @@ import defaultDeck from '@/assets/defaultDeck.json';
 // Hacky fix. For some reason when vuex-persist is combined with direct-vuex,
 // the store will get overwritten by default values.
 const setDefault = function(store: any) {
-  console.log(store.state);
+  // console.log(store.state);
   for (const deck of store.state.decksMod.decks) {
     if (deck._id === '123') return null;
   }
@@ -31,7 +31,7 @@ const setDefault = function(store: any) {
 // });
 const vuexLocalStorage = new VuexPersistence<State>({
   storage: window.localStorage,
-  reducer: state => ({ decksMod: state.decksMod }), // only save decks module
+  reducer: (state) => ({ decksMod: state.decksMod }), // only save decks module
   // filter: mutation => mutation.type == 'addNavItem',
 });
 const vuexCookie = new VuexPersistence<State>({
@@ -70,7 +70,12 @@ export default store;
 
 // The following exports will be used to enable types in the
 // implementation of actions and getters.
-export { rootActionContext, moduleActionContext, rootGetterContext, moduleGetterContext };
+export {
+  rootActionContext,
+  moduleActionContext,
+  rootGetterContext,
+  moduleGetterContext,
+};
 
 // The following lines enable types in the injected store '$store'.
 export type AppStore = typeof store;

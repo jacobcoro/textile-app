@@ -1,7 +1,10 @@
 <template>
   <div class="home">
     <section class="home__section editing-section">
-      <deck-input class="editing-section__deck-input" @createDeck="createDeck"></deck-input>
+      <deck-input
+        class="editing-section__deck-input"
+        @createDeck="createDeck"
+      ></deck-input>
       <card-input
         class="editing-section__card-input"
         :selected-deck="selectedDeck"
@@ -33,7 +36,13 @@
 <script lang="ts">
 import Vue from 'vue';
 
-import { Deck, Card, NewCardPayload, DeleteCardPayload, EditCardPayload } from '@/types';
+import {
+  Deck,
+  Card,
+  NewCardPayload,
+  DeleteCardPayload,
+  EditCardPayload,
+} from '../types';
 
 import CardEditor from '@/components/CardEditor.vue';
 import DeckInput from '@/components/DeckInput.vue';

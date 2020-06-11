@@ -42,11 +42,18 @@ export const schema = {
     },
   },
   card: {
+    title: 'Card',
     type: 'object',
     properties: { $ref: '#/definitions/card' },
   },
   deck: {
+    title: 'Deck',
     type: 'object',
     properties: { $ref: '#/definitions/deck' },
+  },
+  decks: {
+    title: 'Decks',
+    type: 'array',
+    items: { $ref: '#/definitions/deck' },
   },
 };
