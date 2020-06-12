@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-// Followiing textile js-examples: react-native-threads-app
+// Followiing textile js-examples: hub-browser-auth-app, simpleAuth
 
 import Vue from 'vue';
 
@@ -53,61 +53,120 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
-// Textile
-import { schema } from '../schemas.js';
-// import { Libp2pCryptoIdentity } from '@textile/threads-core';
-import { Client, Where } from '@textile/threads-client';
+import { deckSchema } from '../schemas.js';
+import { Client, Context, UserAuth } from '@textile/textile';
+import { Where } from '@textile/threads-client';
+
+import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { ThreadID } from '@textile/threads-id';
 
+const serverUrl = process.env.VUE_APP_SERVER_URL;
 export default Vue.extend({
-  name: 'LocalThreadsDB',
+  name: 'SimpleAuth',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
   data() {
     return {
-      decks: [defaultDeck as Deck],
+      decks: [] as Deck[],
       selectedDeck: '' as string,
       showEditor: false as boolean,
       editPayload: {} as EditCardPayload,
-      threadId: null as string,
+      id: null as Libp2pCryptoIdentity,
+      idStr: null as string,
+      userAuth: null as UserAuth,
+      context: null as Context,
       client: null as Client,
+      threadId: null as string,
+      start: null as number,
+      lastLog: null as number,
     };
   },
-  mounted() {
+  created() {
     this.initialize();
   },
   methods: {
-    createDBWithRandomThread: async function() {
-      // Create a new ThreadID to use as our dbID
-      const threadId = ThreadID.fromRandom();
-      // console.log(threadId);
-      // Fire up a new Client
-      const client = new Client();
-      // console.log(client);
-      // Create a new DB with the ID we already generated
-      await client.newDB(threadId); // fails here with error Error: Session or API key required
-      // console.log(client);
+    logTime: function(msg) {
+      const now = new Date().getTime();
+      console.log(
+        `${msg} ----> from start: ${now - this.start} from last step: ${now -
+          this.lastLog}`
+      );
+      this.lastLog = now;
     },
-    createDecksCollection: async function() {
+    initialize: async function() {
+      this.lastLog = new Date().getTime();
+      this.start = new Date().getTime();
+      /** Create or get identity */
+      this.id = await this.getOrCreateIdentity();
+      this.logTime('getOrCreateIdentity()');
+      this.userAuth = await this.createCredentials();
+      // console.log('this.userAuth', this.userAuth);
+      /** Store the access control metadata */
+      this.context = Context.fromUserAuth(this.userAuth);
+      this.logTime('Context.fromUserAuth(this.userAuth)');
+      /** The simple auth endpoint doesn't provide a user's Hub API Token */
+      this.client = new Client(this.context);
+      this.logTime('new Client(this.context)');
+      const token = await this.client.getToken(this.id);
+      this.logTime('client.getToken(this.id)');
+
+      /** Update our context, including the token */
+      this.userAuth = {
+        ...this.userAuth,
+        token: token,
+      };
+      this.context = Context.fromUserAuth(this.userAuth);
+      this.logTime('Context.fromUserAuth(this.userAuth)');
+
+      // Create a new ThreadID to use as our dbID
+      this.threadId = ThreadID.fromRandom();
+      this.logTime('ThreadID.fromRandom()');
+      await this.client.newDB(this.threadId);
+      this.logTime('client.newDB(this.threadId)');
+
       // Create a new collection with the Deck schema
-      await this.client.newCollection(this.threadId, 'Deck', schema.deck);
-      // Create a new instance of a Deck
-      const decks = await this.client.create(
+      this.decksCollection = await this.client.newCollection(
         this.threadId,
         'Deck',
-        this.decks[0]
+        deckSchema
       );
-      // console.log(decks);
+      this.logTime('this.client.newCollection(deckCollection)');
+      await this.createDeckInstances([defaultDeck]);
+      this.logTime('createDeckInstances([defaultDeck])');
+      this.decks = await this.queryDecksCollection();
+      this.logTime('queryDecksCollection()');
+    },
+    getOrCreateIdentity: async function() {
+      if (this.id) {
+        return this.id;
+      } else {
+        const id = await Libp2pCryptoIdentity.fromRandom();
+        this.id = id;
+        return id;
+      }
+    },
+    createCredentials: async function<UserAuth>() {
+      const response = await fetch(`${serverUrl}/api/credentials`, {
+        method: 'GET',
+      });
+      const userAuth = await response.json();
+      this.logTime('fetch(`${serverUrl}/api/credentials`');
+      return userAuth;
+    },
+    createDeckInstances: async function(decks: Deck[]) {
+      // Create a new instance of a Deck
+      const createdDecks = await this.client.create(
+        this.threadId,
+        'Deck',
+        decks // note that the third param needs to be an array
+      ); // client.create() returns the deck _id // console.log(createdDecks);
     },
     queryDecksCollection: async function() {
       // Search for an Instance with _id of 123 (the default deck's ID)
       const query = new Where('_id').eq('123');
+      // response is an object {instancesList: [//array of matching instances]}
       const response = await this.client.find(this.threadId, 'Deck', query);
       // console.log(response);
-    },
-    initialize: async function() {
-      await this.createDBWithRandomThread();
-      await this.createDecksCollection();
-      await this.queryDecksCollection();
+      return response.instancesList;
     },
     createDeck: function(deck: Deck) {
       this.decks.push(deck);

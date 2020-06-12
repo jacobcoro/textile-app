@@ -87,10 +87,10 @@ export default Vue.extend({
       }
     },
     checkCachedContext: function(idStr: string) {
-      console.log('this.contextStr', this.contextStr);
+      // console.log('this.contextStr', this.contextStr);
       if (this.contextStr) {
         const ctxJson = JSON.parse(this.contextStr);
-        console.log('ctxJson', ctxJson);
+        // console.log('ctxJson', ctxJson);
         if (
           ctxJson['x-textile-api-sig-msg'] &&
           Date.parse(ctxJson['x-textile-api-sig-msg']) > new Date().getTime()
@@ -124,17 +124,17 @@ export default Vue.extend({
          * using your developer resources on the Hub.
          * note this is not an individual user's key, but your user_group key
          */
-        console.log(
-          'process.env.VUE_APP_USER_API_KEY',
-          process.env.VUE_APP_USER_API_KEY
-        );
+        // console.log(
+        //   'process.env.VUE_APP_USER_API_KEY',
+        //   process.env.VUE_APP_USER_API_KEY
+        // );
         // await ctx.withUserKey({
         //   key: process.env.VUE_APP_USER_API_KEY,
         //   secret: process.env.VUE_APP_USER_API_SECRET,
         //   type: 1,
         // });
         await ctx.withAPIKey(process.env.VUE_APP_USER_API_KEY);
-        console.log('ctx', ctx);
+        // console.log('ctx', ctx);
 
         /**
          * Update our Database context
@@ -142,7 +142,7 @@ export default Vue.extend({
          * API calls will now include the credentials created above
          */
         this.db = new Client(ctx);
-        console.log('this.db', this.db);
+        // console.log('this.db', this.db);
         /**getTokenChallenge
          * Generate an app user API token
          *
@@ -157,14 +157,14 @@ export default Vue.extend({
            * The token will automatically be added to the DB context when running getToken
            */
           // should be full id, not idstr
-          console.log('this.id', this.id);
+          // console.log('this.id', this.id);
           token = await this.db.getToken(this.id);
           this.contextToken = token;
-          console.log('token', token);
+          // console.log('token', token);
         }
         /** Append the token to our Context */
         ctx.withToken(token);
-        console.log('ctx.withToken', ctx);
+        // console.log('ctx.withToken', ctx);
         /**
          * The Context is reusable in future app sessions, so we store it.
          */

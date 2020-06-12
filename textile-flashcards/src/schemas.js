@@ -3,7 +3,7 @@
 // simple schema
 export const cardSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
-  $id: 'https://github.com/Jewcub/textile-flashcards',
+  id: 'https://github.com/Jewcub/textile-flashcards',
   title: 'Card',
   type: 'object',
   properties: {
@@ -13,10 +13,38 @@ export const cardSchema = {
   },
 };
 
-// complex schema with refs
-export const schema = {
+export const deckSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
-  $id: 'https://github.com/Jewcub/textile-flashcards',
+  id: 'https://github.com/Jewcub/textile-flashcards',
+  title: 'Deck',
+  type: 'object',
+  definitions: {
+    card: {
+      title: 'Card',
+      type: 'object',
+      properties: {
+        _id: { type: 'string' },
+        frontText: { type: 'string' },
+        backText: { type: 'string' },
+      },
+    },
+  },
+  properties: {
+    _id: { type: 'string' },
+    title: { type: 'string' },
+    cards: {
+      type: 'array',
+      items: { $ref: '#/definitions/card' },
+      default: [],
+    },
+  },
+};
+
+// complex schema with refs
+// doesn't work yet
+export const fullSchema = {
+  $schema: 'http://json-schema.org/draft-07/schema#',
+  id: 'https://github.com/Jewcub/textile-flashcards',
   definitions: {
     card: {
       title: 'Card',
@@ -28,6 +56,7 @@ export const schema = {
       },
     },
     deck: {
+      id: 'https://github.com/Jewcub/textile-flashcards/deck',
       title: 'Deck',
       type: 'object',
       properties: {

@@ -13,6 +13,9 @@
       <router-link class="nav__link" to="/RemoteThreadsDB"
         >3: RemoteThreadsDB</router-link
       >
+      <router-link class="nav__link" to="/SimpleAuth"
+        >4: SimpleAuth</router-link
+      >
     </div>
     <router-view class="app_router-view" />
   </div>

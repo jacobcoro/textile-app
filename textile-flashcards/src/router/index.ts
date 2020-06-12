@@ -2,8 +2,8 @@ import Vue from 'vue';
 import VueRouter, { RouteConfig } from 'vue-router';
 import VanillaCRUD from '../views/VanillaCRUD.vue';
 import LocalThreadsDB from '../views/LocalThreadsDB.vue';
-
 import RemoteThreadsDB from '../views/RemoteThreadsDB.vue';
+import SimpleAuth from '../views/SimpleAuth.vue';
 
 Vue.use(VueRouter);
 
@@ -27,6 +27,11 @@ const routes: Array<RouteConfig> = [
     path: '/RemoteThreadsDB',
     name: 'RemoteThreadsDB',
     component: RemoteThreadsDB,
+  },
+  {
+    path: '/SimpleAuth',
+    name: 'SimpleAuth',
+    component: SimpleAuth,
   },
 ];
 

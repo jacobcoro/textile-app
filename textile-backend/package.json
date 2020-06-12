@@ -18,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^3.1.0",
     "@textile/context": "^0.4.1",
     "@textile/textile": "^0.3.1",
     "@textile/threads-client": "^0.5.1",

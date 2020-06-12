@@ -7,6 +7,7 @@ import logger from 'koa-logger';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import websockify from 'koa-websocket';
+const cors = require('@koa/cors');
 
 import { createReadStream } from 'fs';
 
@@ -25,6 +26,7 @@ const PORT = parseInt(process.env.PORT, 10) || 3000;
 const app = websockify(new koa());
 
 /** Middlewares */
+app.use(cors());
 app.use(json());
 app.use(logger());
 app.use(bodyParser());
