@@ -11,6 +11,7 @@ const routeNames = [
   'SimpleAuth',
   'RemoteThreadDB',
   'LocalThreadDB',
+  'ChallengeAuth',
 ];
 const baseUrl = 'localhost:8080/';
 

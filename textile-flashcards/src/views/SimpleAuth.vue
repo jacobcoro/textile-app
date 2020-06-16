@@ -61,7 +61,8 @@ import { deckSchema } from '../schemas';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Where } from '@textile/threads-client';
 import { Buckets, Client, KeyInfo, ThreadID, UserAuth } from '@textile/hub';
-const serverUrl = process.env.VUE_APP_SERVER_URL;
+const SERVER_URL = process.env.VUE_APP_SERVER_URL;
+const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
 
 export default {
   name: 'SimpleAuth',
@@ -107,7 +108,7 @@ export default {
       }
     }
     async function createCredentials() {
-      const response = await fetch(`${serverUrl}/api/credentials`, {
+      const response = await fetch(`${SERVER_URL}/api/credentials`, {
         method: 'GET',
       });
       state.userAuth = await response.json();
@@ -122,15 +123,14 @@ export default {
        *
        * The token will be added to the existing db.context.
        */
-      state.client = Client.withUserAuth(state.userAuth, serverUrl);
-      // console.log('state.client', state.client); //this prints, and can even see correct userAuth info
-      // const token = await state.client.getToken(state.id);
-      // // Error: Response closed without headers
-      // console.log('token', token); // this never prints
-      // state.userAuth = {
-      //   ...state.userAuth,
-      //   token: token,
-      // };
+      state.client = Client.withUserAuth(state.userAuth, TEXTILE_API);
+      console.log('state.client', state.client);
+      const token = await state.client.getToken(state.id);
+      console.log('token', token);
+      state.userAuth = {
+        ...state.userAuth,
+        token: token,
+      };
     }
     async function getOrCreateThreadId() {
       /**
@@ -144,14 +144,10 @@ export default {
       }
     }
     async function createDB() {
-      let dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      let threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
       await state.client.newDB(state.threadId, 'myDB');
-      dbInfo = await state.client.getDBInfo(state.threadId);
+      const dbInfo = await state.client.getDBInfo(state.threadId);
       console.log('dbInfo', dbInfo);
-      threadsList = await state.client.listThreads();
+      const threadsList = await state.client.listThreads();
       console.log('threadsList', threadsList);
     }
     async function getOrCreateDecksCollection(threadId: ThreadID) {

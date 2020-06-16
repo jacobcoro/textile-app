@@ -62,8 +62,9 @@ import { deckSchema } from '../schemas';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Where } from '@textile/threads-client';
 import { Buckets, Client, KeyInfo, ThreadID, UserAuth } from '@textile/hub';
-const serverUrl = process.env.VUE_APP_SERVER_URL;
-
+const SERVER_URL = process.env.VUE_APP_SERVER_URL;
+const SOCKET_URL = process.env.VUE_APP_SOCKET_URL;
+const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
 export default {
   name: 'SimpleAuth',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
@@ -107,13 +108,62 @@ export default {
         return state.id;
       }
     }
-    async function createCredentials() {
-      const response = await fetch(`${serverUrl}/api/credentials`, {
-        method: 'GET',
+    const loginWithChallenge = async (
+      id: Libp2pCryptoIdentity
+    ): Promise<UserAuth> => {
+      return new Promise((resolve, reject) => {
+        /** Initialize our websocket connection */
+        const socket = new WebSocket(SOCKET_URL);
+        console.log('socket, SOCKET_URL', socket, SOCKET_URL);
+        /** Wait for our socket to open successfully */
+        socket.onopen = () => {
+          /** Get public key string */
+          const publicKey = id.public.toString();
+          console.log('publicKey', publicKey);
+          /** Send a new token request */
+          socket.send(
+            JSON.stringify({
+              pubkey: publicKey,
+              type: 'token',
+            })
+          );
+
+          /** Listen for messages from the server */
+          socket.onmessage = async (event) => {
+            console.log('socket', socket);
+            const data = JSON.parse(event.data);
+            console.log('data', data);
+            switch (data.type) {
+              /** Error never happens :) */
+              case 'error': {
+                reject(data.value);
+                break;
+              }
+              /** The server issued a new challenge */
+              case 'challenge': {
+                /** Convert the challenge json to a Buffer */
+                const buf = Buffer.from(data.value);
+                /** User our identity to sign the challenge */
+                const credentials = await id.sign(buf);
+                /** Send the signed challenge back to the server */
+                socket.send(
+                  JSON.stringify({
+                    type: 'challenge',
+                    sig: credentials.toJSON(),
+                  })
+                );
+                break;
+              }
+              /** New token generated */
+              case 'token': {
+                resolve(data.value);
+                break;
+              }
+            }
+          };
+        };
       });
-      state.userAuth = await response.json();
-      console.log('userAuth', state.userAuth);
-    }
+    };
     async function startClientWithAuth() {
       /**
        * Generate an app user API token
@@ -123,15 +173,15 @@ export default {
        *
        * The token will be added to the existing db.context.
        */
-      state.client = Client.withUserAuth(state.userAuth, serverUrl);
-      // console.log('state.client', state.client); //this prints, and can even see correct userAuth info
-      // const token = await state.client.getToken(state.id);
-      // // Error: Response closed without headers
-      // console.log('token', token); // this never prints
-      // state.userAuth = {
-      //   ...state.userAuth,
-      //   token: token,
-      // };
+      console.log('SERVER_URL');
+      state.client = await Client.withUserAuth(state.userAuth, TEXTILE_API);
+      console.log('state.client', state.client);
+      const token = await state.client.getToken(state.id);
+      console.log('token', token);
+      state.userAuth = {
+        ...state.userAuth,
+        token: token,
+      };
     }
     async function getOrCreateThreadId() {
       /**
@@ -145,15 +195,15 @@ export default {
       }
     }
     async function createDB() {
-      let dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      let threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
       await state.client.newDB(state.threadId, 'myDB');
-      dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
+      // let dbInfo = await state.client.getDBInfo(state.threadId);
+      // console.log('dbInfo', dbInfo);
+      // let threadsList = await state.client.listThreads();
+      // console.log('threadsList', threadsList);
+      // dbInfo = await state.client.getDBInfo(state.threadId);
+      // console.log('dbInfo', dbInfo);
+      // threadsList = await state.client.listThreads();
+      // console.log('threadsList', threadsList);
     }
     async function getOrCreateDecksCollection(threadId: ThreadID) {
       const DeckCollection = await state.client.newCollection(
@@ -206,8 +256,8 @@ export default {
       try {
         await getOrCreateID();
         logTime('getOrCreateID');
-        await createCredentials();
-        logTime('createCredentials');
+        state.userAuth = await loginWithChallenge(state.id);
+        logTime('loginWithChallenge');
 
         await startClientWithAuth();
         logTime('startClientWithAuth');

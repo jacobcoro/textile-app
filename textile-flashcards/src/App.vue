@@ -13,6 +13,9 @@
       <router-link class="nav__link" to="/SimpleAuth"
         >3: SimpleAuth</router-link
       >
+      <router-link class="nav__link" to="/ChallengeAuth"
+        >4: ChallengeAuth</router-link
+      >
     </div>
     <router-view class="app_router-view" />
   </div>

@@ -4,7 +4,7 @@ import CompositionCRUD from '../views/CompositionCRUD.vue';
 import RemoteThreadDB from '../views/RemoteThreadDB.vue';
 import LocalThreadDB from '../views/LocalThreadDB.vue';
 import SimpleAuth from '../views/SimpleAuth.vue';
-
+import ChallengeAuth from '../views/ChallengeAuth.vue';
 Vue.use(VueRouter);
 
 const routes: Array<RouteConfig> = [
@@ -32,6 +32,11 @@ const routes: Array<RouteConfig> = [
     path: '/SimpleAuth',
     name: 'SimpleAuth',
     component: SimpleAuth,
+  },
+  {
+    path: '/ChallengeAuth',
+    name: 'ChallengeAuth',
+    component: ChallengeAuth,
   },
 ];
 

@@ -61,6 +61,7 @@ import dotenv from 'dotenv';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Where } from '@textile/threads-client';
 import { Buckets, Client, KeyInfo, ThreadID } from '@textile/hub';
+const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
 
 export default {
   name: 'RemoteThreadDB',
@@ -105,7 +106,6 @@ export default {
       }
     }
     async function startClientWithAuth() {
-      dotenv.config({ path: './.env.local' }); //if the .env file is not just .env, you need this config
       await getOrCreateID();
       /**
        * Authenticate the user with your User Key and Secret
@@ -125,7 +125,7 @@ export default {
        *
        * API calls will now include the credentials created above
        */
-      state.client = await Client.withKeyInfo(keyInfo);
+      state.client = await Client.withKeyInfo(keyInfo, TEXTILE_API);
       /**
        * Generate an app user API token
        *
