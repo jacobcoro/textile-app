@@ -16,6 +16,9 @@
       <router-link class="nav__link" to="/ChallengeAuth"
         >4: ChallengeAuth</router-link
       >
+      <router-link class="nav__link" to="/PersistedCredentials"
+        >5: PersistedCredentials</router-link
+      >
     </div>
     <router-view class="app_router-view" />
   </div>

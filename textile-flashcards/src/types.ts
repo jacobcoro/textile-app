@@ -1,3 +1,6 @@
+import { Identity } from '@textile/threads-core';
+import { Client, ThreadID, UserAuth } from '@textile/hub';
+
 export interface Card {
   _id: string;
   frontText: string;
@@ -13,6 +16,7 @@ export interface NewCardPayload {
   backText: string;
   deckTitle: string;
 }
+
 export interface EditCardPayload {
   frontText: string;
   backText: string;
@@ -24,16 +28,17 @@ export interface DeleteCardPayload {
   deckTitle: string;
 }
 export interface AuthState {
-  CONTEXT_KEY: null | string;
-  IDENTITY_KEY: null | string;
-  TOKEN_KEY: null | string;
-  USER_THREAD_ID: null | string;
-  persistenceKey: null | string;
+  id: Identity;
+  idStr: string;
+  userAuth: UserAuth;
+  client: Client;
+  threadId: ThreadID;
+  threadIdStr: string;
 }
 export interface DecksState {
   decks: Deck[];
 }
-export interface State {
+export interface RootState {
   authMod: AuthState;
   decksMod: DecksState;
 }

@@ -5,42 +5,32 @@ import VuexPersistence from 'vuex-persist';
 import Cookies from 'js-cookie';
 import localForage from 'localforage';
 
-import { State } from '../types';
+import { RootState } from '../types';
 import authModule from './authModule';
 import decksModule from './decksModule';
 
 import defaultDeck from '@/assets/defaultDeck.json';
 
-// Hacky fix. For some reason when vuex-persist is combined with direct-vuex,
-// the store will get overwritten by default values.
-const setDefault = function(store: any) {
-  // console.log(store.state);
-  for (const deck of store.state.decksMod.decks) {
-    if (deck._id === '123') return null;
-  }
-  store.commit.decksMod.addDeck(defaultDeck);
-  console.log(store.state);
-};
-
-// const vuexLocalForage = new VuexPersistence<State>({
-//   key: process.env.VUE_APP_STORAGE_KEY,
-//   storage: localForage,
-//   reducer: state => ({ decksMod: state.decksMod }), // only save decks module
-//   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
-//   asyncStorage: true,
-// });
-const vuexLocalStorage = new VuexPersistence<State>({
-  storage: window.localStorage,
+// need to use local forage if we want to store ID as an object with methods, and not stringified.
+const vuexLocalForage = new VuexPersistence<RootState>({
+  key: process.env.VUE_APP_STORAGE_KEY,
+  storage: localForage,
   reducer: (state) => ({ decksMod: state.decksMod }), // only save decks module
-  // filter: mutation => mutation.type == 'addNavItem',
+  // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
+  asyncStorage: true,
 });
-const vuexCookie = new VuexPersistence<State>({
+// const vuexLocalStorage = new VuexPersistence<RootState>({
+//   storage: window.localStorage,
+//   reducer: (state) => ({ decksMod: state.decksMod }), // only save decks module
+//   // filter: mutation => mutation.type == 'addNavItem',
+// });
+const vuexCookie = new VuexPersistence<RootState>({
   restoreState: (key, storage) => Cookies.getJSON(key),
   saveState: (key, state, storage) =>
     Cookies.set(key, state, {
       expires: 3,
-    }) as void,
-  modules: ['auth'], //only save user module
+    }) as any,
+  modules: ['authMod'], //only save user module
   // filter: mutation => mutation.type == 'logIn' || mutation.type == 'logOut',
 });
 
@@ -58,13 +48,12 @@ const {
     decksMod: decksModule,
   },
   plugins: [
-    // vuexLocalForage.plugin,
-    vuexLocalStorage.plugin,
+    vuexLocalForage.plugin,
+    // vuexLocalStorage.plugin,
     vuexCookie.plugin,
   ],
 });
-//
-setDefault(store);
+
 // Export the direct-store instead of the classic Vuex store.
 export default store;
 

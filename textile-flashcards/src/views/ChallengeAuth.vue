@@ -34,11 +34,7 @@
 </template>
 
 <script lang="ts">
-//haven't started yet. so far same as simpleauth
-// Followiing textile js-examples: hub-browser-auth-app, simpleAuth
-
-// It's not a practical real world use case because
-// the server will give Authentication to anyone who asks
+// Followiing textile js-examples: hub-browser-auth-app, index.html (authentication with challenge)
 
 import { reactive } from '@vue/composition-api';
 
@@ -258,7 +254,6 @@ export default {
         logTime('getOrCreateID');
         state.userAuth = await loginWithChallenge(state.id);
         logTime('loginWithChallenge');
-
         await startClientWithAuth();
         logTime('startClientWithAuth');
         await getOrCreateThreadId();
@@ -296,7 +291,7 @@ export default {
       };
       const decks = await getAllDeckInstances();
       for (const deck of decks) {
-        if (deck.title === state.selectedDeck) {
+        if (deck.title === payload.deckTitle) {
           deck.cards.push(newCard);
           state.client.save(state.threadId, 'Deck', [deck]);
           const updatedDecks = await getAllDeckInstances();

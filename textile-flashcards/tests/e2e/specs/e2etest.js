@@ -12,6 +12,7 @@ const routeNames = [
   'RemoteThreadDB',
   'LocalThreadDB',
   'ChallengeAuth',
+  'PersistedCredentials',
 ];
 const baseUrl = 'localhost:8080/';
 

@@ -34,6 +34,8 @@
 </template>
 
 <script lang="ts">
+// this is not working as of yet because it requires a local threads deamon running (which is written in go)
+
 import { reactive } from '@vue/composition-api';
 
 import {
