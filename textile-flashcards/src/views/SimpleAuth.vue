@@ -7,15 +7,15 @@
       ></deck-input>
       <card-input
         class="editing-section__card-input"
-        :selected-deck="selectedDeck"
-        :decks="decks"
+        :selected-deck="state.selectedDeck"
+        :decks="state.decks"
         @addCard="addCard"
         @changeSelectedDeck="changeSelectedDeck"
       ></card-input>
     </section>
     <section class="home__section display-section">
       <deck-display
-        v-for="deck in decks"
+        v-for="deck in state.decks"
         :key="deck.title"
         class="display-section__deck-display"
         :deck="deck"
@@ -23,10 +23,10 @@
         @openEditor="openEditor"
       ></deck-display>
       <card-editor
-        v-if="showEditor"
+        v-if="state.showEditor"
         class="display-section__card-editor"
-        :edit-payload="editPayload"
-        @cancelEdit="showEditor = false"
+        :edit-payload="state.editPayload"
+        @cancelEdit="state.showEditor = false"
         @editCard="editCard"
       ></card-editor>
     </section>
@@ -36,7 +36,10 @@
 <script lang="ts">
 // Followiing textile js-examples: hub-browser-auth-app, simpleAuth
 
-import Vue from 'vue';
+// It's not a practical real world use case because
+// the server will give Authentication to anyone who asks
+
+import { reactive } from '@vue/composition-api';
 
 import {
   Deck,
@@ -53,19 +56,19 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
-import { deckSchema } from '../schemas.js';
-import { Client, Context, UserAuth } from '@textile/textile';
-import { Where } from '@textile/threads-client';
+import { deckSchema } from '../schemas';
 
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
-import { ThreadID } from '@textile/threads-id';
-
+import { Where } from '@textile/threads-client';
+import { Buckets, Client, KeyInfo, ThreadID, UserAuth } from '@textile/hub';
 const serverUrl = process.env.VUE_APP_SERVER_URL;
-export default Vue.extend({
+
+export default {
   name: 'SimpleAuth',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
-  data() {
-    return {
+
+  setup() {
+    const state = reactive({
       decks: [] as Deck[],
       selectedDeck: '' as string,
       showEditor: false as boolean,
@@ -73,153 +76,239 @@ export default Vue.extend({
       id: null as Libp2pCryptoIdentity,
       idStr: null as string,
       userAuth: null as UserAuth,
-      context: null as Context,
       client: null as Client,
-      threadId: null as string,
-      start: null as number,
+      threadId: null as ThreadID,
+      startTime: null as number,
       lastLog: null as number,
-    };
-  },
-  created() {
-    this.initialize();
-  },
-  methods: {
-    logTime: function(msg) {
-      const now = new Date().getTime();
-      console.log(
-        `${msg} ----> from start: ${now - this.start} from last step: ${now -
-          this.lastLog}`
-      );
-      this.lastLog = now;
-    },
-    initialize: async function() {
-      this.lastLog = new Date().getTime();
-      this.start = new Date().getTime();
-      /** Create or get identity */
-      this.id = await this.getOrCreateIdentity();
-      this.logTime('getOrCreateIdentity()');
-      this.userAuth = await this.createCredentials();
-      // console.log('this.userAuth', this.userAuth);
-      /** Store the access control metadata */
-      this.context = Context.fromUserAuth(this.userAuth);
-      this.logTime('Context.fromUserAuth(this.userAuth)');
-      /** The simple auth endpoint doesn't provide a user's Hub API Token */
-      this.client = new Client(this.context);
-      this.logTime('new Client(this.context)');
-      const token = await this.client.getToken(this.id);
-      this.logTime('client.getToken(this.id)');
-
-      /** Update our context, including the token */
-      this.userAuth = {
-        ...this.userAuth,
-        token: token,
-      };
-      this.context = Context.fromUserAuth(this.userAuth);
-      this.logTime('Context.fromUserAuth(this.userAuth)');
-
-      // Create a new ThreadID to use as our dbID
-      this.threadId = ThreadID.fromRandom();
-      this.logTime('ThreadID.fromRandom()');
-      await this.client.newDB(this.threadId);
-      this.logTime('client.newDB(this.threadId)');
-
-      // Create a new collection with the Deck schema
-      this.decksCollection = await this.client.newCollection(
-        this.threadId,
-        'Deck',
-        deckSchema
-      );
-      this.logTime('this.client.newCollection(deckCollection)');
-      await this.createDeckInstances([defaultDeck]);
-      this.logTime('createDeckInstances([defaultDeck])');
-      this.decks = await this.queryDecksCollection();
-      this.logTime('queryDecksCollection()');
-    },
-    getOrCreateIdentity: async function() {
-      if (this.id) {
-        return this.id;
+    });
+    async function getOrCreateID(): Promise<Libp2pCryptoIdentity> {
+      /**
+       * Create a new user Identity
+       *
+       * The identity pk will be cached in AsyncStorage.
+       * On the next session, the pk identity will be reused
+       */
+      // let idStr = store.state.auth.IDENTITY_KEY;
+      if (state.idStr) {
+        state.id = await Libp2pCryptoIdentity.fromString(state.idStr);
+        // console.log('id Libp2pCryptoIdentity.fromString', id);
+        return state.id;
       } else {
-        const id = await Libp2pCryptoIdentity.fromRandom();
-        this.id = id;
-        return id;
+        /**
+         * Create a new user Identity
+         * The identity pk can be cached and reused
+         */
+        state.id = await Libp2pCryptoIdentity.fromRandom();
+        // console.log('id Libp2pCryptoIdentity.fromRandom()', id);
+        state.idStr = state.id.toString();
+        // console.log('idStr', idStr);
+        // store.commit.auth.setIdentityKey(idStr);
+        return state.id;
       }
-    },
-    createCredentials: async function<UserAuth>() {
+    }
+    async function createCredentials() {
       const response = await fetch(`${serverUrl}/api/credentials`, {
         method: 'GET',
       });
-      const userAuth = await response.json();
-      this.logTime('fetch(`${serverUrl}/api/credentials`');
-      return userAuth;
-    },
-    createDeckInstances: async function(decks: Deck[]) {
+      state.userAuth = await response.json();
+      console.log('userAuth', state.userAuth);
+    }
+    async function startClientWithAuth() {
+      /**
+       * Generate an app user API token
+       *
+       * The app user (defined by Identity) needs an API token
+       * The API will give you one based on ID plus Credentials
+       *
+       * The token will be added to the existing db.context.
+       */
+      state.client = Client.withUserAuth(state.userAuth, serverUrl);
+      // console.log('state.client', state.client); //this prints, and can even see correct userAuth info
+      // const token = await state.client.getToken(state.id);
+      // // Error: Response closed without headers
+      // console.log('token', token); // this never prints
+      // state.userAuth = {
+      //   ...state.userAuth,
+      //   token: token,
+      // };
+    }
+    async function getOrCreateThreadId() {
+      /**
+       * All storage should be scoped to the identity
+       *
+       * If the identity changes and you try to use an old database,
+       * it will error due to not authorized.
+       */
+      if (!state.threadId) {
+        state.threadId = await ThreadID.fromRandom();
+      }
+    }
+    async function createDB() {
+      let dbInfo = await state.client.getDBInfo(state.threadId);
+      console.log('dbInfo', dbInfo);
+      let threadsList = await state.client.listThreads();
+      console.log('threadsList', threadsList);
+      await state.client.newDB(state.threadId, 'myDB');
+      dbInfo = await state.client.getDBInfo(state.threadId);
+      console.log('dbInfo', dbInfo);
+      threadsList = await state.client.listThreads();
+      console.log('threadsList', threadsList);
+    }
+    async function getOrCreateDecksCollection(threadId: ThreadID) {
+      const DeckCollection = await state.client.newCollection(
+        threadId,
+        'Deck',
+        deckSchema
+      );
+      const collectionIndexes = await state.client.getCollectionIndexes(
+        threadId,
+        'Deck'
+      );
+      console.log('collectionIndexes', collectionIndexes);
+    }
+    async function createDeckInstances(decks: Deck[], threadId: ThreadID) {
       // Create a new instance of a Deck
-      const createdDecks = await this.client.create(
-        this.threadId,
+      const createdDecks = await state.client.create(
+        threadId,
         'Deck',
         decks // note that the third param needs to be an array
       ); // client.create() returns the deck _id // console.log(createdDecks);
-    },
-    queryDecksCollection: async function() {
+      console.log('createdDecks', createdDecks);
+    }
+    async function getDeckByID(deckId: string) {
       // Search for an Instance with _id of 123 (the default deck's ID)
-      const query = new Where('_id').eq('123');
+      const query = new Where('_id').eq(deckId);
+      console.log('query', query);
       // response is an object {instancesList: [//array of matching instances]}
-      const response = await this.client.find(this.threadId, 'Deck', query);
-      // console.log(response);
+      const response = await state.client.find(state.threadId, 'Deck', query);
+      // console.log('response', response);
+      return response.instancesList[0];
+    }
+    async function getAllDeckInstances() {
+      // Empty {} object to search all
+      const response = await state.client.find(state.threadId, 'Deck', {});
+      // console.log('response', response);
       return response.instancesList;
-    },
-    createDeck: function(deck: Deck) {
-      this.decks.push(deck);
-      this.selectedDeck = deck.title;
-    },
-    addCard: function(payload: NewCardPayload) {
+    }
+    const logTime = (msg) => {
+      const now = new Date().getTime();
+      console.log(
+        `${msg} ----> from start: ${now -
+          state.startTime} from last step: ${now - state.lastLog}`
+      );
+      state.lastLog = now;
+    };
+    const initialize = async () => {
+      state.startTime = new Date().getTime();
+      state.lastLog = new Date().getTime();
+
+      try {
+        await getOrCreateID();
+        logTime('getOrCreateID');
+        await createCredentials();
+        logTime('createCredentials');
+
+        await startClientWithAuth();
+        logTime('startClientWithAuth');
+        await getOrCreateThreadId();
+        logTime('getOrCreateThreadId');
+        await createDB();
+        logTime('createDB');
+        await getOrCreateDecksCollection(state.threadId);
+        logTime('getOrCreateDecksCollection');
+        await createDeckInstances([defaultDeck as Deck], state.threadId);
+        logTime('createDeckInstances(defaultDecks)');
+
+        const deck = await getDeckByID('123');
+        console.log('deck', deck);
+        state.decks = [deck];
+        state.selectedDeck = deck.title;
+        logTime('queryDecksCollection()');
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    initialize();
+    const createDeck = async (deck: Deck) => {
+      await createDeckInstances([deck], state.threadId);
+      const updatedDecks = await getAllDeckInstances();
+      console.log('updatedDecks', updatedDecks);
+      state.decks = updatedDecks;
+      state.selectedDeck = deck.title;
+    };
+    const addCard = async (payload: NewCardPayload) => {
       const newCard: Card = {
         _id: uuid(),
         frontText: payload.frontText,
         backText: payload.backText,
       };
-      for (const deck of this.decks) {
-        if (deck.title === this.selectedDeck) {
+      const decks = await getAllDeckInstances();
+      for (const deck of decks) {
+        if (deck.title === state.selectedDeck) {
           deck.cards.push(newCard);
+          state.client.save(state.threadId, 'Deck', [deck]);
+          const updatedDecks = await getAllDeckInstances();
+          console.log('updatedDecks', updatedDecks);
+          state.decks = updatedDecks;
           break;
         }
       }
-    },
-    editCard: function(payload: EditCardPayload) {
-      for (const deck of this.decks) {
+    };
+    const editCard = async (payload: EditCardPayload) => {
+      const decks = await getAllDeckInstances();
+      for (const deck of decks) {
         if (deck.title === payload.deckTitle) {
           for (const card of deck.cards) {
             if (card._id === payload._id) {
               card.frontText = payload.frontText;
               card.backText = payload.backText;
+              state.client.save(state.threadId, 'Deck', [deck]);
+              const updatedDecks = await getAllDeckInstances();
+              console.log('updatedDecks', updatedDecks);
+              state.decks = updatedDecks;
               break;
             }
           }
           break;
         }
       }
-      this.showEditor = false;
-    },
-    deleteCard: function(payload: DeleteCardPayload) {
-      for (const deck of this.decks) {
+      state.showEditor = false;
+    };
+    const deleteCard = async (payload: DeleteCardPayload) => {
+      const decks = await getAllDeckInstances();
+      for (const deck of state.decks) {
         if (deck.title === payload.deckTitle) {
           for (const card of deck.cards) {
             if (card._id === payload._id) {
               deck.cards.splice(deck.cards.indexOf(card), 1);
+              state.client.save(state.threadId, 'Deck', [deck]);
+              const updatedDecks = await getAllDeckInstances();
+              console.log('updatedDecks', updatedDecks);
+              state.decks = updatedDecks;
               break;
             }
           }
           break;
         }
       }
-    },
-    changeSelectedDeck: function(title: string) {
-      this.selectedDeck = title;
-    },
-    openEditor: function(payload: EditCardPayload) {
-      this.editPayload = payload;
-      this.showEditor = true;
-    },
+    };
+    const changeSelectedDeck = (title: string) => {
+      state.selectedDeck = title;
+    };
+    const openEditor = (payload: EditCardPayload) => {
+      state.editPayload = payload;
+      state.showEditor = true;
+    };
+    return {
+      state,
+      createDeck,
+      addCard,
+      editCard,
+      deleteCard,
+      changeSelectedDeck,
+      openEditor,
+    };
   },
-});
+};
 </script>

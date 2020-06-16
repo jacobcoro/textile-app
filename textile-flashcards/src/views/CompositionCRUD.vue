@@ -7,15 +7,15 @@
       ></deck-input>
       <card-input
         class="editing-section__card-input"
-        :selected-deck="selectedDeck"
-        :decks="decks"
+        :selected-deck="state.selectedDeck"
+        :decks="state.decks"
         @addCard="addCard"
-        @changeSelectedDeck="changeSelectedDeck"
+        @changeSelectedDeck="changeSelectedDeck()"
       ></card-input>
     </section>
     <section class="home__section display-section">
       <deck-display
-        v-for="deck in decks"
+        v-for="deck in state.decks"
         :key="deck.title"
         class="display-section__deck-display"
         :deck="deck"
@@ -23,10 +23,10 @@
         @openEditor="openEditor"
       ></deck-display>
       <card-editor
-        v-if="showEditor"
+        v-if="state.showEditor"
         class="display-section__card-editor"
-        :edit-payload="editPayload"
-        @cancelEdit="showEditor = false"
+        :edit-payload="state.editPayload"
+        @cancelEdit="state.showEditor = false"
         @editCard="editCard"
       ></card-editor>
     </section>
@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { reactive } from '@vue/composition-api';
 
 import {
   Deck,
@@ -52,37 +52,35 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
 
-export default Vue.extend({
-  name: 'VanillaCRUD',
+export default {
+  name: 'CompositionApiVanilla',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
-  data() {
-    return {
+  setup() {
+    const state = reactive({
       decks: [defaultDeck as Deck],
       selectedDeck: '' as string,
       showEditor: false as boolean,
       editPayload: {} as EditCardPayload,
+    });
+    const createDeck = (deck: Deck) => {
+      state.decks.push(deck);
+      state.selectedDeck = deck.title;
     };
-  },
-  methods: {
-    createDeck: function(deck: Deck) {
-      this.decks.push(deck);
-      this.selectedDeck = deck.title;
-    },
-    addCard: function(payload: NewCardPayload) {
+    const addCard = (payload: NewCardPayload) => {
       const newCard: Card = {
         _id: uuid(),
         frontText: payload.frontText,
         backText: payload.backText,
       };
-      for (const deck of this.decks) {
-        if (deck.title === this.selectedDeck) {
+      for (const deck of state.decks) {
+        if (deck.title === state.selectedDeck) {
           deck.cards.push(newCard);
           break;
         }
       }
-    },
-    editCard: function(payload: EditCardPayload) {
-      for (const deck of this.decks) {
+    };
+    const editCard = (payload: EditCardPayload) => {
+      for (const deck of state.decks) {
         if (deck.title === payload.deckTitle) {
           for (const card of deck.cards) {
             if (card._id === payload._id) {
@@ -94,10 +92,10 @@ export default Vue.extend({
           break;
         }
       }
-      this.showEditor = false;
-    },
-    deleteCard: function(payload: DeleteCardPayload) {
-      for (const deck of this.decks) {
+      state.showEditor = false;
+    };
+    const deleteCard = (payload: DeleteCardPayload) => {
+      for (const deck of state.decks) {
         if (deck.title === payload.deckTitle) {
           for (const card of deck.cards) {
             if (card._id === payload._id) {
@@ -108,14 +106,23 @@ export default Vue.extend({
           break;
         }
       }
-    },
-    changeSelectedDeck: function(title: string) {
-      this.selectedDeck = title;
-    },
-    openEditor: function(payload: EditCardPayload) {
-      this.editPayload = payload;
-      this.showEditor = true;
-    },
+    };
+    const changeSelectedDeck = (title: string) => {
+      state.selectedDeck = title;
+    };
+    const openEditor = (payload: EditCardPayload) => {
+      state.editPayload = payload;
+      state.showEditor = true;
+    };
+    return {
+      state,
+      createDeck,
+      addCard,
+      editCard,
+      deleteCard,
+      changeSelectedDeck,
+      openEditor,
+    };
   },
-});
+};
 </script>

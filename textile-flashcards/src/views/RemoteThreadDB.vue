@@ -34,11 +34,10 @@
 </template>
 
 <script lang="ts">
-//haven't started yet. so far same as simpleauth
-// Followiing textile js-examples: hub-browser-auth-app, simpleAuth
-
-// It's not a practical real world use case because
-// the server will give Authentication to anyone who asks
+// Built following the 'react-native-hub-app' in textile 'js-examples'
+// It's not a practical use case because the textile hub user_group secret key is stored client-side
+// It's also impractical because every change in the UI is waiting for changes in the remoteDB to finish and report back
+// The Auth also expires very quickly
 
 import { reactive } from '@vue/composition-api';
 
@@ -58,14 +57,13 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { deckSchema } from '../schemas';
-
+import dotenv from 'dotenv';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Where } from '@textile/threads-client';
-import { Buckets, Client, KeyInfo, ThreadID, UserAuth } from '@textile/hub';
-const serverUrl = process.env.VUE_APP_SERVER_URL;
+import { Buckets, Client, KeyInfo, ThreadID } from '@textile/hub';
 
 export default {
-  name: 'SimpleAuth',
+  name: 'RemoteThreadDB',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
 
   setup() {
@@ -76,9 +74,8 @@ export default {
       editPayload: {} as EditCardPayload,
       id: null as Libp2pCryptoIdentity,
       idStr: null as string,
-      userAuth: null as UserAuth,
-      client: null as Client,
       threadId: null as ThreadID,
+      client: null as Client,
       startTime: null as number,
       lastLog: null as number,
     });
@@ -107,14 +104,28 @@ export default {
         return state.id;
       }
     }
-    async function createCredentials() {
-      const response = await fetch(`${serverUrl}/api/credentials`, {
-        method: 'GET',
-      });
-      state.userAuth = await response.json();
-      console.log('userAuth', state.userAuth);
-    }
     async function startClientWithAuth() {
+      dotenv.config({ path: './.env.local' }); //if the .env file is not just .env, you need this config
+      await getOrCreateID();
+      /**
+       * Authenticate the user with your User Key and Secret
+       *
+       * This will allow the user to store threads and buckets
+       * using your developer resources on the Hub.
+       *
+       * Note: These keys should not be stored on the client side as in this example.
+       */
+      const keyInfo: KeyInfo = {
+        key: process.env.VUE_APP_USER_API_KEY,
+        secret: process.env.VUE_APP_USER_API_SECRET,
+        type: 1,
+      };
+      /**
+       * Auth our Database with admin info
+       *
+       * API calls will now include the credentials created above
+       */
+      state.client = await Client.withKeyInfo(keyInfo);
       /**
        * Generate an app user API token
        *
@@ -123,15 +134,8 @@ export default {
        *
        * The token will be added to the existing db.context.
        */
-      state.client = Client.withUserAuth(state.userAuth, serverUrl);
-      // console.log('state.client', state.client); //this prints, and can even see correct userAuth info
-      // const token = await state.client.getToken(state.id);
-      // // Error: Response closed without headers
-      // console.log('token', token); // this never prints
-      // state.userAuth = {
-      //   ...state.userAuth,
-      //   token: token,
-      // };
+      const token = await state.client.getToken(state.id);
+      console.log('token', token);
     }
     async function getOrCreateThreadId() {
       /**
@@ -145,14 +149,10 @@ export default {
       }
     }
     async function createDB() {
-      let dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      let threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
       await state.client.newDB(state.threadId, 'myDB');
-      dbInfo = await state.client.getDBInfo(state.threadId);
+      const dbInfo = await state.client.getDBInfo(state.threadId);
       console.log('dbInfo', dbInfo);
-      threadsList = await state.client.listThreads();
+      const threadsList = await state.client.listThreads();
       console.log('threadsList', threadsList);
     }
     async function getOrCreateDecksCollection(threadId: ThreadID) {
@@ -206,9 +206,6 @@ export default {
       try {
         await getOrCreateID();
         logTime('getOrCreateID');
-        await createCredentials();
-        logTime('createCredentials');
-
         await startClientWithAuth();
         logTime('startClientWithAuth');
         await getOrCreateThreadId();

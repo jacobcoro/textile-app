@@ -40,14 +40,14 @@
 import Vue from 'vue';
 import TheFlashcard from '@/components/TheFlashcard.vue';
 
-import { Card, Deck } from '@/types';
+import { Card, Deck } from '../types';
 export default Vue.extend({
   components: { flashcard: TheFlashcard },
   props: {
     deck: {
       type: Object as () => Deck, // https://frontendsociety.com/using-a-typescript-interfaces-and-types-as-a-prop-type-in-vuejs-508ab3f83480
       default() {
-        return { cards: [] as Card[], title: 'Default Deck' };
+        return { cards: [] as Card[], title: 'Animal facts' };
       },
     },
   },

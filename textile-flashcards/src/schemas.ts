@@ -1,7 +1,6 @@
-// import { JSONSchema } from '@textile/threads-database';
-// can't find that. so just changed to javascript
-// simple schema
-export const cardSchema = {
+import { JSONSchema } from '@textile/threads-database';
+
+export const cardSchema: JSONSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   id: 'https://github.com/Jewcub/textile-flashcards',
   title: 'Card',
@@ -13,7 +12,7 @@ export const cardSchema = {
   },
 };
 
-export const deckSchema = {
+export const deckSchema: JSONSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   id: 'https://github.com/Jewcub/textile-flashcards',
   title: 'Deck',
@@ -42,7 +41,7 @@ export const deckSchema = {
 
 // complex schema with refs
 // doesn't work yet
-export const fullSchema = {
+export const fullSchema: JSONSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   id: 'https://github.com/Jewcub/textile-flashcards',
   definitions: {

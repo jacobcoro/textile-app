@@ -6,10 +6,15 @@
 /// <reference types="cypress" />
 // @ts-check
 
-const routeNames = ['VanillaCRUD'];
+const routeNames = [
+  'CompositionCRUD',
+  'SimpleAuth',
+  'RemoteThreadDB',
+  'LocalThreadDB',
+];
 const baseUrl = 'localhost:8080/';
 
-const testRoute = routeName => {
+const testRoute = (routeName) => {
   describe(routeName, () => {
     beforeEach(() => {
       cy.visit(baseUrl + routeName);
@@ -33,7 +38,9 @@ const testRoute = routeName => {
       cy.get('.deck-input > .form__text-input').type('Test Deck');
       cy.get('.deck-input__add-icon').click();
 
-      cy.get('.form__text-input[name=card-front-input]').type('Test card front');
+      cy.get('.form__text-input[name=card-front-input]').type(
+        'Test card front'
+      );
       cy.get('.form__text-input[name=card-back-input]').type('Test card back');
       cy.get('.card-input__add-icon').click();
 
@@ -44,37 +51,60 @@ const testRoute = routeName => {
       cy.get('.deck-display__btns-col > .btns-col__btn--edit')
         .eq(0)
         .click();
-      cy.get('.card-editor .form__text-input[name=card-front-input]').type('Test card edit front');
-      cy.get('.card-editor .form__text-input[name=card-back-input]').type('Test card edit back');
+      cy.get('.card-editor .form__text-input[name=card-front-input]').type(
+        'Test card edit front'
+      );
+      cy.get('.card-editor .form__text-input[name=card-back-input]').type(
+        'Test card edit back'
+      );
       cy.get('.card-editor .form__btn--confirm').click();
-      cy.contains('.flashcard__front > .flashcard__content', 'Test card edit front');
-      cy.contains('.flashcard__back > .flashcard__content', 'Test card edit back');
+      cy.contains(
+        '.flashcard__front > .flashcard__content',
+        'Test card edit front'
+      );
+      cy.contains(
+        '.flashcard__back > .flashcard__content',
+        'Test card edit back'
+      );
     });
     it('cancels edit when cancel is clicked', () => {
       cy.get('.deck-display__btns-col > .btns-col__btn--edit')
         .eq(0)
         .click();
-      cy.get('.card-editor .form__text-input[name=card-front-input]').type('Test card edit front');
-      cy.get('.card-editor .form__text-input[name=card-back-input]').type('Test card edit back');
+      cy.get('.card-editor .form__text-input[name=card-front-input]').type(
+        'Test card edit front'
+      );
+      cy.get('.card-editor .form__text-input[name=card-back-input]').type(
+        'Test card edit back'
+      );
       cy.get('.card-editor .form__btn--cancel').click();
       cy.contains('.flashcard__front', 'What is a group of zebra').should(
         'not.contain.text',
         'Test card edit front'
       );
-      cy.contains('.flashcard__back', 'A zeal').should('not.contain.text', 'Test card edit back');
+      cy.contains('.flashcard__back', 'A zeal').should(
+        'not.contain.text',
+        'Test card edit back'
+      );
     });
     it('can delete a card', () => {
       cy.get('.deck-display__btns-col > .btns-col__btn--delete')
         .eq(0)
         .click();
-      cy.contains('.flashcard__front', 'What is a group of zebra').should('not.exist');
+      cy.contains('.flashcard__front', 'What is a group of zebra').should(
+        'not.exist'
+      );
     });
     it('can flip a card when clicked', () => {
-      cy.contains('.flashcard__front', 'What is a group of zebra').should('be.visible');
+      cy.contains('.flashcard__front', 'What is a group of zebra').should(
+        'be.visible'
+      );
       cy.get('.flashcard__front')
         .eq(0)
         .click();
-      cy.contains('.flashcard__front', 'What is a group of zebra').should('not.be.visible');
+      cy.contains('.flashcard__front', 'What is a group of zebra').should(
+        'not.be.visible'
+      );
       cy.contains('.flashcard__back', 'A zeal').should('be.visible');
       cy.get('.flashcard__back')
         .eq(0)
@@ -83,13 +113,19 @@ const testRoute = routeName => {
     });
     if (routeName === 'VanillaCRUD') {
       it('does not save state on page reload', () => {
-        cy.contains('.flashcard__front', 'What is a group of zebra').should('exist');
+        cy.contains('.flashcard__front', 'What is a group of zebra').should(
+          'exist'
+        );
         cy.get('.deck-display__btns-col > .btns-col__btn--delete')
           .eq(0)
           .click();
-        cy.contains('.flashcard__front', 'What is a group of zebra').should('not.exist');
+        cy.contains('.flashcard__front', 'What is a group of zebra').should(
+          'not.exist'
+        );
         cy.reload();
-        cy.contains('.flashcard__front', 'What is a group of zebra').should('exist');
+        cy.contains('.flashcard__front', 'What is a group of zebra').should(
+          'exist'
+        );
       });
     }
     // if (routeName === 'VuexPersisted') {

@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "strict": true,
+    "target": "ES6",
+    "module": "commonjs",
     "jsx": "preserve",
+    "allowJs": true,
     "importHelpers": true,
     "moduleResolution": "node",
     "noImplicitAny": true,
+    "noImplicitThis": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,

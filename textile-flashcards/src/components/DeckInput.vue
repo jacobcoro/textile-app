@@ -17,7 +17,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { Deck, Card } from '@/types';
+import { Deck, Card } from '../types';
 export default Vue.extend({
   data() {
     return {

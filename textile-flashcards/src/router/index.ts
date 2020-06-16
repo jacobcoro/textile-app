@@ -1,8 +1,8 @@
 import Vue from 'vue';
 import VueRouter, { RouteConfig } from 'vue-router';
-import VanillaCRUD from '../views/VanillaCRUD.vue';
-import LocalThreadsDB from '../views/LocalThreadsDB.vue';
-import RemoteThreadsDB from '../views/RemoteThreadsDB.vue';
+import CompositionCRUD from '../views/CompositionCRUD.vue';
+import RemoteThreadDB from '../views/RemoteThreadDB.vue';
+import LocalThreadDB from '../views/LocalThreadDB.vue';
 import SimpleAuth from '../views/SimpleAuth.vue';
 
 Vue.use(VueRouter);
@@ -10,23 +10,23 @@ Vue.use(VueRouter);
 const routes: Array<RouteConfig> = [
   {
     path: '/',
-    name: 'VanillaCRUD',
-    component: VanillaCRUD,
+    name: 'CompositionCRUD',
+    component: CompositionCRUD,
   },
   {
-    path: '/VanillaCRUD',
-    name: 'VanillaCRUD',
-    component: VanillaCRUD,
+    path: '/CompositionCRUD',
+    name: 'CompositionCRUD',
+    component: CompositionCRUD,
   },
   {
-    path: '/LocalThreadsDB',
-    name: 'LocalThreadsDB',
-    component: LocalThreadsDB,
+    path: '/RemoteThreadDB',
+    name: 'RemoteThreadDB',
+    component: RemoteThreadDB,
   },
   {
-    path: '/RemoteThreadsDB',
-    name: 'RemoteThreadsDB',
-    component: RemoteThreadsDB,
+    path: '/LocalThreadDB',
+    name: 'LocalThreadDB',
+    component: LocalThreadDB,
   },
   {
     path: '/SimpleAuth',

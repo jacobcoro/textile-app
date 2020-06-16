@@ -1,20 +1,17 @@
 <template>
   <div class="app u-scroller">
     <div class="app__nav nav">
-      <router-link class="nav__link" to="/VanillaCRUD"
-        >0: Vanilla Vue CRUD</router-link
+      <router-link class="nav__link" to="/CompositionCRUD"
+        >0: Vanilla CRUD</router-link
       >
-      <router-link class="nav__link" to="/VuexPersisted"
-        >1: Vuex Persisted</router-link
+      <router-link class="nav__link" to="/RemoteThreadDB"
+        >1: RemoteThreadDB</router-link
       >
-      <router-link class="nav__link" to="/LocalThreadsDB"
-        >2: LocalThreadsDB</router-link
-      >
-      <router-link class="nav__link" to="/RemoteThreadsDB"
-        >3: RemoteThreadsDB</router-link
+      <router-link class="nav__link" to="/LocalThreadDB"
+        >2: LocalThreadDB</router-link
       >
       <router-link class="nav__link" to="/SimpleAuth"
-        >4: SimpleAuth</router-link
+        >3: SimpleAuth</router-link
       >
     </div>
     <router-view class="app_router-view" />

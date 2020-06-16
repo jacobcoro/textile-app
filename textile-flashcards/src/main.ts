@@ -19,10 +19,14 @@ library.add(faTrashAlt, faPlusSquare, faCheck, faEdit, faTimes);
 
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 // Vue.component('font-awesome-layers', FontAwesomeLayers);
+
+import VueCompositionApi from '@vue/composition-api';
+
 Vue.config.productionTip = false;
+Vue.use(VueCompositionApi);
 
 new Vue({
   router,
   store: store.original,
-  render: h => h(App),
+  render: (h) => h(App),
 }).$mount('#app');

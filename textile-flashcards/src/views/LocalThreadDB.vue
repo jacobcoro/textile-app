@@ -34,12 +34,6 @@
 </template>
 
 <script lang="ts">
-//haven't started yet. so far same as simpleauth
-// Followiing textile js-examples: hub-browser-auth-app, simpleAuth
-
-// It's not a practical real world use case because
-// the server will give Authentication to anyone who asks
-
 import { reactive } from '@vue/composition-api';
 
 import {
@@ -58,14 +52,19 @@ import DeckDisplay from '@/components/DeckDisplay.vue';
 import { v4 as uuid } from 'uuid';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { deckSchema } from '../schemas';
+// import dotenv from 'dotenv';
+import {
+  Identity,
+  Libp2pCryptoIdentity,
+  ThreadID,
+} from '@textile/threads-core';
+// import { Where } from '@textile/threads-db';
+// import { Buckets, Client, KeyInfo, ThreadID } from '@textile/hub';
 
-import { Libp2pCryptoIdentity } from '@textile/threads-core';
-import { Where } from '@textile/threads-client';
-import { Buckets, Client, KeyInfo, ThreadID, UserAuth } from '@textile/hub';
-const serverUrl = process.env.VUE_APP_SERVER_URL;
-
+import { Database, JSONSchema, Collection } from '@textile/threads-database';
+import { collect } from 'streaming-iterables';
 export default {
-  name: 'SimpleAuth',
+  name: 'LocalThreadDB',
   components: { CardInput, DeckDisplay, DeckInput, CardEditor },
 
   setup() {
@@ -76,9 +75,9 @@ export default {
       editPayload: {} as EditCardPayload,
       id: null as Libp2pCryptoIdentity,
       idStr: null as string,
-      userAuth: null as UserAuth,
-      client: null as Client,
       threadId: null as ThreadID,
+      db: null as Database,
+      Deck: null as Collection,
       startTime: null as number,
       lastLog: null as number,
     });
@@ -107,31 +106,11 @@ export default {
         return state.id;
       }
     }
-    async function createCredentials() {
-      const response = await fetch(`${serverUrl}/api/credentials`, {
-        method: 'GET',
-      });
-      state.userAuth = await response.json();
-      console.log('userAuth', state.userAuth);
-    }
-    async function startClientWithAuth() {
-      /**
-       * Generate an app user API token
-       *
-       * The app user (defined by Identity) needs an API token
-       * The API will give you one based on ID plus Credentials
-       *
-       * The token will be added to the existing db.context.
-       */
-      state.client = Client.withUserAuth(state.userAuth, serverUrl);
-      // console.log('state.client', state.client); //this prints, and can even see correct userAuth info
-      // const token = await state.client.getToken(state.id);
-      // // Error: Response closed without headers
-      // console.log('token', token); // this never prints
-      // state.userAuth = {
-      //   ...state.userAuth,
-      //   token: token,
-      // };
+    async function startDbWithId() {
+      state.db = new Database('myDB'); //fails here with error: connection refused
+      await state.db.start(state.id);
+      const dbInfo = await state.db.getInfo();
+      console.log('dbInfo', dbInfo);
     }
     async function getOrCreateThreadId() {
       /**
@@ -144,52 +123,58 @@ export default {
         state.threadId = await ThreadID.fromRandom();
       }
     }
-    async function createDB() {
-      let dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      let threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
-      await state.client.newDB(state.threadId, 'myDB');
-      dbInfo = await state.client.getDBInfo(state.threadId);
-      console.log('dbInfo', dbInfo);
-      threadsList = await state.client.listThreads();
-      console.log('threadsList', threadsList);
-    }
     async function getOrCreateDecksCollection(threadId: ThreadID) {
-      const DeckCollection = await state.client.newCollection(
-        threadId,
+      let entries = await state.db.collections.entries();
+      let values = await state.db.collections.values();
+      let collectionNames = [];
+      let collectionContents = [];
+      await state.db.collections.forEach((collection) => {
+        collectionNames.push(collection.name);
+        collectionContents.push(collection.find({}));
+      });
+      console.log(
+        'entries, values, collectionNames, collectionContents',
+        entries,
+        values,
+        collectionNames,
+        collectionContents
+      );
+      state.Deck = await state.db.newCollection(
         'Deck',
-        deckSchema
+        deckSchema as JSONSchema
       );
-      const collectionIndexes = await state.client.getCollectionIndexes(
-        threadId,
-        'Deck'
+      entries = await state.db.collections.entries();
+      values = await state.db.collections.values();
+      collectionNames = [];
+      collectionContents = [];
+      await state.db.collections.forEach((collection) => {
+        collectionNames.push(collection.name);
+        collectionContents.push(collection.find({}));
+      });
+      console.log(
+        'entries, values, collectionNames, collectionContents',
+        entries,
+        values,
+        collectionNames,
+        collectionContents
       );
-      console.log('collectionIndexes', collectionIndexes);
     }
-    async function createDeckInstances(decks: Deck[], threadId: ThreadID) {
-      // Create a new instance of a Deck
-      const createdDecks = await state.client.create(
-        threadId,
-        'Deck',
-        decks // note that the third param needs to be an array
-      ); // client.create() returns the deck _id // console.log(createdDecks);
-      console.log('createdDecks', createdDecks);
+    async function createDeckInstances(decks: Deck[]) {
+      const NewDeck: Collection = new state.Deck(defaultDeck); // Not yet persisted
+      await NewDeck.save(); // Persist changes to db
+
+      console.log('DefaultDeck', NewDeck);
     }
     async function getDeckByID(deckId: string) {
-      // Search for an Instance with _id of 123 (the default deck's ID)
-      const query = new Where('_id').eq(deckId);
-      console.log('query', query);
-      // response is an object {instancesList: [//array of matching instances]}
-      const response = await state.client.find(state.threadId, 'Deck', query);
-      // console.log('response', response);
-      return response.instancesList[0];
+      const response = await state.Deck.findById(deckId);
+      console.log('response', response);
+      return response;
     }
     async function getAllDeckInstances() {
       // Empty {} object to search all
-      const response = await state.client.find(state.threadId, 'Deck', {});
-      // console.log('response', response);
-      return response.instancesList;
+      const response: Deck[] = await state.Deck.find({});
+      console.log('response', response);
+      return response;
     }
     const logTime = (msg) => {
       const now = new Date().getTime();
@@ -206,25 +191,20 @@ export default {
       try {
         await getOrCreateID();
         logTime('getOrCreateID');
-        await createCredentials();
-        logTime('createCredentials');
-
-        await startClientWithAuth();
-        logTime('startClientWithAuth');
+        await startDbWithId();
+        logTime('startDbWithId');
         await getOrCreateThreadId();
         logTime('getOrCreateThreadId');
-        await createDB();
-        logTime('createDB');
         await getOrCreateDecksCollection(state.threadId);
         logTime('getOrCreateDecksCollection');
-        await createDeckInstances([defaultDeck as Deck], state.threadId);
+        await createDeckInstances([defaultDeck as Deck]);
         logTime('createDeckInstances(defaultDecks)');
 
-        const deck = await getDeckByID('123');
-        console.log('deck', deck);
-        state.decks = [deck];
-        state.selectedDeck = deck.title;
-        logTime('queryDecksCollection()');
+        // const deck = await getDeckByID('123');
+        // console.log('deck', deck);
+        // state.decks = [deck];
+        // state.selectedDeck = deck.title;
+        // logTime('queryDecksCollection()');
       } catch (err) {
         console.log(err);
       }
@@ -232,7 +212,7 @@ export default {
 
     initialize();
     const createDeck = async (deck: Deck) => {
-      await createDeckInstances([deck], state.threadId);
+      await createDeckInstances([deck]);
       const updatedDecks = await getAllDeckInstances();
       console.log('updatedDecks', updatedDecks);
       state.decks = updatedDecks;
@@ -248,7 +228,7 @@ export default {
       for (const deck of decks) {
         if (deck.title === state.selectedDeck) {
           deck.cards.push(newCard);
-          state.client.save(state.threadId, 'Deck', [deck]);
+          // state.db.save(state.threadId, 'Deck', [deck]);
           const updatedDecks = await getAllDeckInstances();
           console.log('updatedDecks', updatedDecks);
           state.decks = updatedDecks;
@@ -264,7 +244,7 @@ export default {
             if (card._id === payload._id) {
               card.frontText = payload.frontText;
               card.backText = payload.backText;
-              state.client.save(state.threadId, 'Deck', [deck]);
+              // state.db.save(state.threadId, 'Deck', [deck]);
               const updatedDecks = await getAllDeckInstances();
               console.log('updatedDecks', updatedDecks);
               state.decks = updatedDecks;
@@ -283,7 +263,7 @@ export default {
           for (const card of deck.cards) {
             if (card._id === payload._id) {
               deck.cards.splice(deck.cards.indexOf(card), 1);
-              state.client.save(state.threadId, 'Deck', [deck]);
+              // state.db.save(state.threadId, 'Deck', [deck]);
               const updatedDecks = await getAllDeckInstances();
               console.log('updatedDecks', updatedDecks);
               state.decks = updatedDecks;
