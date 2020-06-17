@@ -138,6 +138,13 @@ export default {
     DECKS(state: DecksState, decks: Deck[]) {
       state.decks = decks;
     },
+    DECK(state: DecksState, deck: Deck) {
+      for (const existingDeck of state.decks) {
+        if (existingDeck._id == deck._id) {
+          existingDeck.cards = deck.cards;
+        }
+      }
+    },
     // Although these are quicker, they have all been moved to actions to insure textile works.
     ADD_DECK(state: DecksState, deck: Deck) {
       state.decks.push(deck);

@@ -34,8 +34,8 @@
 </template>
 
 <script lang="ts">
-// A more realistic example, where login info is persisted and the auth functions are abstracted to the vuex
-// see authModule.ts
+// A more realistic example, where login info is persisted and the auth functions are abstracted to vuex
+// all the action is in store/authModule.ts and decksModule.ts
 // Based on textile js-examples: hub-browser-auth-app, index.html (authentication with challenge)
 
 import { reactive, computed } from '@vue/composition-api';

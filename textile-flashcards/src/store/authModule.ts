@@ -6,6 +6,7 @@ import { ActionContext } from 'vuex';
 import { deckSchema } from '../schemas';
 
 import defaultDeck from '@/assets/defaultDeck.json';
+import { Instance } from '@textile/threads-client';
 
 // const SERVER_URL = process.env.VUE_APP_SERVER_URL;
 const SOCKET_URL = process.env.VUE_APP_SOCKET_URL;
@@ -129,6 +130,7 @@ export default {
     async startClientWithAuth({
       state,
       commit,
+      rootState,
     }: ActionContext<AuthState, RootState>) {
       const client = await Client.withUserAuth(state.userAuth, TEXTILE_API);
       commit('CLIENT', client);
@@ -169,6 +171,23 @@ export default {
           return threadId;
         }
       }
+    },
+    async setUpListening({
+      state,
+      commit,
+    }: ActionContext<AuthState, RootState>) {
+      state.client.listen(
+        state.threadId,
+        [{ collectionName: 'Deck', instanceID: '123' }],
+        (reply, err) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log('instance changed remotely', reply);
+            if (reply) commit('decksMod/DECK', reply.instance, { root: true });
+          }
+        }
+      );
     },
     async createDB({ state }: ActionContext<AuthState, RootState>) {
       // need to check if it exists first
@@ -239,6 +258,8 @@ export default {
       logTime('startClientWithAuth');
       await dispatch('getOrCreateThreadId');
       logTime('getOrCreateThreadId');
+      await dispatch('setUpListening');
+      logTime('setUpListening');
       await dispatch('createDB');
       logTime('createDB');
       await dispatch('getOrCreateDecksCollection', state.threadId);

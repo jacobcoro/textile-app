@@ -1,6 +1,7 @@
 import route from 'koa-route';
 import Emittery from 'emittery';
-import { UserAuth } from '@textile/hub';
+import { UserAuth, Client } from '@textile/hub';
+import { Where, ThreadID } from '@textile/threads-client';
 
 import { newClientDB, getAPISig } from './hub-helpers';
 
@@ -100,6 +101,10 @@ const wssLogin = route.all('/ws/userauth', (ctx) => {
                         key: process.env.USER_API_KEY,
                     };
 
+                    // Uncomment the next two lines to turn on the test I wrote for the client.listen() feature
+                    // const hubCtx = db.context.withAPISig(auth);
+                    // testingListen(hubCtx);
+
                     /** Return the result to the client */
                     ctx.websocket.send(
                         JSON.stringify({
@@ -135,5 +140,39 @@ const wssLogin = route.all('/ws/userauth', (ctx) => {
         }
     });
 });
+
+/**
+ * This will keep adding numbers to the first card's front text once a minute
+ * this will help us see if the 'client.listen' feature is working on the client.
+ *
+ * to activate test: uncomment where this is called in the code
+ *  **/
+async function testingListen(ctx) {
+    const client = await new Client(ctx);
+    const threads = await client.listThreads(ctx);
+    const threadId: ThreadID = ThreadID.fromString(threads.listList[0].id);
+    async function getDeckByID(deckId: string) {
+        const query = new Where('_id').eq(deckId);
+        const response = await client.find(threadId, 'Deck', query);
+        console.log('response.instancesList[0]', response.instancesList[0]);
+        return response.instancesList[0];
+    }
+    async function editCard(x: number) {
+        const deck = await getDeckByID('123');
+        for (const card of deck.cards) {
+            if (card._id === '1') {
+                card.frontText += ' ' + x.toString();
+                client.save(threadId, 'Deck', [deck]);
+                console.log('deck', deck);
+                break;
+            }
+        }
+    }
+    let x = 0;
+    setInterval(() => {
+        editCard(x);
+        x++;
+    }, 6000);
+}
 
 export { wssLogin };

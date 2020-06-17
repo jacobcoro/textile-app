@@ -9,9 +9,10 @@ import { RootState } from '../types';
 import authModule from './authModule';
 import decksModule from './decksModule';
 
-import defaultDeck from '@/assets/defaultDeck.json';
-
 // need to use local forage if we want to store ID as an object with methods, and not stringified.
+// right now we are using cookies for the authmod, which is why we need to rehydrate the id and thread id from strings every time
+// if we used local forage for the authmod we could just store the IDs themselves.
+
 const vuexLocalForage = new VuexPersistence<RootState>({
   key: process.env.VUE_APP_STORAGE_KEY,
   storage: localForage,
