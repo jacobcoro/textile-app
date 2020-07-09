@@ -20,3 +20,13 @@ view README for build and test info
 built with koa, based on the textile docs above and specifically [this example](https://github.com/textileio/js-examples/tree/master/hub-browser-auth-app)
 
 view README for build and test info
+
+## to run full project
+
+using docker build strategy from [this article](https://hackernoon.com/a-better-way-to-develop-node-js-with-docker-cd29d3a0093)
+
+```bash
+make setup
+make install
+make dev
+```

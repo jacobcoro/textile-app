@@ -2,17 +2,16 @@
 (global as any).WebSocket = require('isomorphic-ws');
 
 import koa from 'koa';
-import Router from 'koa-router';
 import logger from 'koa-logger';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import websockify from 'koa-websocket';
+import passport from 'passport';
+import User from './models/user';
 const cors = require('@koa/cors');
 
-import { createReadStream } from 'fs';
-
 import { wssLogin } from './wss';
-import api from './api';
+import router from './routes';
 import dotenv from 'dotenv';
 dotenv.config({ path: './.env.local' }); //if the .env file is not just .env, you need this config
 
@@ -31,28 +30,17 @@ app.use(json());
 app.use(logger());
 app.use(bodyParser());
 
-/**
- * Start HTTP Routes
- */
-const router = new Router();
-app.use(router.routes()).use(router.allowedMethods());
+const LocalStrategy = require('passport-local').Strategy;
+passport.use(new LocalStrategy(User.authenticate()));
+app.use(passport.initialize());
+app.use(passport.session());
 
-/**
- * Serve index.html
- */
-router.get('/', async (ctx: koa.Context, next: () => Promise<any>) => {
-    ctx.type = 'text/html; charset=utf-8';
-    ctx.body = createReadStream(__dirname + '/../client/index.html');
-    await next();
-});
+//
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
-/**
- * Create Rest endpoint for server-side token issue
- *
- * See ./api.ts
- */
-app.use(api.routes());
-app.use(api.allowedMethods());
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 /**
  * Create Websocket endpoint for client-side token challenge

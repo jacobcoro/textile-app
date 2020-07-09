@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+  dev:
+    image: node:12
+    volumes:
+      - .:/usr/src/service
+      - nodemodules:/usr/src/service/node_modules
+    working_dir: /usr/src/service
+    environment:
+      - NODE_ENV=development
+    ports:
+      - 8080:8080
+      - 3003:3003
+    depends_on:
+      - mongo-db
+    command: npm run dev
+    networks:
+      - app-network
+
+  mongo-db:
+    image: mongo
+    restart: always
+    container_name: mongo-db
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-db:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongo-db:
+    name: mongo-db
+  nodemodules:
+    external: true
+networks:
+  app-network:
+    name: app-network

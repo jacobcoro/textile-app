@@ -116,7 +116,7 @@ export default {
                 );
                 break;
               }
-              /** New token generated */
+              /** New token generated  */
               case 'token': {
                 commit('USER_AUTH', data.value);
                 resolve(data.value);

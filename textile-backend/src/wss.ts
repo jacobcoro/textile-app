@@ -55,13 +55,13 @@ const wssLogin = route.all('/ws/userauth', (ctx) => {
                     const token = await db.getTokenChallenge(
                         data.pubkey,
                         /** The callback passes the challenge back to the client */
-                        (challenge: Buffer) => {
+                        (challenge: Uint8Array) => {
                             return new Promise((resolve, reject) => {
                                 /** Pass the challenge to the client */
                                 ctx.websocket.send(
                                     JSON.stringify({
                                         type: 'challenge',
-                                        value: challenge.toJSON(),
+                                        value: Buffer.from(challenge).toJSON(),
                                     }),
                                 );
                                 /** Wait for the challenge event from our event emitter */
@@ -172,7 +172,7 @@ async function testingListen(ctx) {
     setInterval(() => {
         editCard(x);
         x++;
-    }, 6000);
+    }, 60000);
 }
 
 export { wssLogin };
